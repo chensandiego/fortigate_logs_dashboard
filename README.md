@@ -1,13 +1,16 @@
-step1
+How to run the system
 
-create a python virtual env
+1. ensure uvicorn is installed first
 
-step2
-install all needed packages using requirements.txt
+   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-step3
-ensure es has fortigate los and proper parsed already
+2. ensure streamlit is installed
 
-step4
-run 
-streamlit run app.py
+   streamlit run app.py
+
+go to the webgui,
+
+username:admin 
+password: 1234
+
+click load log button it will grab forti logs
