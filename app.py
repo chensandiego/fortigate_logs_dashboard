@@ -76,11 +76,12 @@ except Exception as e:
 # 5. Convert Logs to DataFrame
 # ---------------------------------------------------
 records = []
+ 
 for hit in response["hits"]["hits"]:
     src = hit["_source"]
     records.append({
         "timestamp": src.get("@timestamp"),
-        "src_ip": src.get("srcip"),
+           "src_ip": src.get("srcip") or src.get("remip") or src.get("srcaddr") or src.get("src"),
         "dst_ip": src.get("dstip"),
         "src_port": src.get("srcport"),
         "dst_port": src.get("dstport"),
@@ -126,6 +127,12 @@ failed_attempts = df[df["msg"].str.contains("failed", na=False)]
 if len(failed_attempts) > 10:
     findings.append(f"🟠 {len(failed_attempts)} failed authentication attempts detected.")
 
+# Show detail of failed attempts
+if len(failed_attempts) > 0:
+    st.subheader("🟠 Failed Authentication Attempt Details")
+    st.dataframe(failed_attempts[[
+        "timestamp", "src_ip", "dst_ip", "user", "msg", "severity", "policyid"
+    ]], height=300)
 # IPs with excessive activity
 ip_counts = df["src_ip"].value_counts()
 suspicious_ips = ip_counts[ip_counts > 50]
@@ -139,7 +146,20 @@ if findings:
         st.warning(f)
 else:
     st.success("No major issues detected.")
+# IPs with excessive activity (>50 logs)
+ip_counts = df["src_ip"].value_counts()
+suspicious_ips = ip_counts[ip_counts > 50]
 
+if len(suspicious_ips) > 0:
+    findings.append(f"🟡 {len(suspicious_ips)} IPs show abnormal traffic volume.")
+
+    st.subheader("🟡 Suspicious High-Volume Source IPs")
+    suspicious_df = pd.DataFrame({
+        "src_ip": suspicious_ips.index,
+        "event_count": suspicious_ips.values
+    })
+
+    st.table(suspicious_df)
 # ---------------------------------------------------
 # 8. Raw Logs Table
 # ---------------------------------------------------
